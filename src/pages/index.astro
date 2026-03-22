@@ -59,7 +59,7 @@
         color: #eee;
         font-size: 1.1rem;
       }
-      #start-btn, #history-btn {
+      #start-btn, #history-btn, #continue-btn {
         padding: 1rem 3rem;
         font-size: 1.3rem;
         font-weight: 700;
@@ -68,6 +68,9 @@
         border: none;
         border-radius: 12px;
         cursor: pointer;
+      }
+      #continue-btn {
+        background: #1b6b3a;
       }
       #history-btn {
         background: #0f3460;
@@ -461,6 +464,7 @@
         <input type="text" id="p4-name" placeholder="Player 4" />
       </div>
       <button id="start-btn">Start Match</button>
+      <button id="continue-btn" style="display:none">Continue Match</button>
       <button id="history-btn">Previous Matches</button>
     </div>
 
@@ -881,6 +885,7 @@
         initScores();
         currentHole = 0;
         matchSaved = false;
+        document.getElementById('continue-btn')!.style.display = 'none';
         saveState();
         showScorer();
       }
@@ -1034,13 +1039,28 @@
       document.getElementById('btn-home')!.addEventListener('click', () => {
         if (confirm('Go back to home? Your scores are saved.')) {
           document.getElementById('scorer-screen')!.style.display = 'none';
+          populateSetupFromState();
           document.getElementById('setup-screen')!.style.display = 'flex';
         }
       });
 
+      document.getElementById('continue-btn')!.addEventListener('click', () => {
+        showScorer();
+      });
+
+      function populateSetupFromState() {
+        (document.getElementById('team1-name') as HTMLInputElement).value = teamNames[0];
+        (document.getElementById('team2-name') as HTMLInputElement).value = teamNames[1];
+        (document.getElementById('p1-name') as HTMLInputElement).value = players[0];
+        (document.getElementById('p2-name') as HTMLInputElement).value = players[1];
+        (document.getElementById('p3-name') as HTMLInputElement).value = players[2];
+        (document.getElementById('p4-name') as HTMLInputElement).value = players[3];
+        document.getElementById('continue-btn')!.style.display = '';
+      }
+
       // Resume existing match if data exists
       if (loadState()) {
-        showScorer();
+        populateSetupFromState();
       }
 
       // Register service worker (network-first strategy)
