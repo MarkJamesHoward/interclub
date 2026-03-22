@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create astro@latest . -- --template minimal --no-install --no-git --typescript strict)",
+      "Bash(npx create-astro@latest . --template minimal --no-install --no-git --typescript strict --yes)"
+    ]
+  }
+}

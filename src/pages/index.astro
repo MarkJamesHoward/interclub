@@ -1,0 +1,868 @@
+---
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#16213e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <title>Four-Ball Match Scorer</title>
+    <style is:global>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; overflow: hidden; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+        touch-action: manipulation;
+      }
+
+      /* ── Setup Screen ── */
+      #setup-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100dvh;
+        padding: 1rem;
+        gap: 1.5rem;
+      }
+      #setup-screen h1 { font-size: 1.6rem; color: #e94560; }
+      .team-block { width: 100%; max-width: 400px; }
+      .team-block h2 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: #0f3460;
+        background: #e94560;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      .team-block input {
+        width: 100%;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        border: 2px solid #0f3460;
+        border-radius: 8px;
+        background: #16213e;
+        color: #eee;
+        font-size: 1.1rem;
+      }
+      #start-btn {
+        padding: 1rem 3rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: #e94560;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+
+      /* ── Scorer Screen ── */
+      #scorer-screen { display: none; height: 100dvh; flex-direction: column; }
+
+      /* Header */
+      .header {
+        background: #16213e;
+        padding: 0.2rem 0.4rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        border-bottom: 2px solid #0f3460;
+      }
+      .match-status {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+      }
+      .match-badge {
+        padding: 0.8rem 1.4rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .match-badge:active { opacity: 0.7; }
+      .badge-individual { background: #533483; }
+      .badge-fourball { background: #0f3460; }
+      .match-badge.badge-up { background: #1b6b3a; }
+      .match-badge.badge-down { background: #b71c1c; }
+
+      /* Hole navigation */
+      .hole-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.2rem 0.3rem;
+        background: #0f3460;
+        flex-shrink: 0;
+      }
+      .hole-nav button {
+        width: 56px;
+        height: 40px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        background: #533483;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .hole-nav button:disabled { opacity: 0.3; }
+      .hole-label {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #e94560;
+      }
+
+      /* Hole dots */
+      .hole-dots {
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+        padding: 0.2rem 0.3rem;
+        background: #16213e;
+        flex-shrink: 0;
+      }
+      .hole-dot {
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: #333;
+        border: 1px solid #555;
+        cursor: pointer;
+      }
+      .hole-dot.filled { background: #4ecca3; border-color: #4ecca3; }
+      .hole-dot.active { border: 2px solid #e94560; width: 16px; height: 16px; }
+
+      /* Player score rows */
+      .players-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .player-row {
+        flex: 1;
+        padding: 4px;
+        border-bottom: 1px solid #0f3460;
+      }
+      .player-row:nth-child(2) { border-bottom: 3px solid #e94560; }
+      .player-name {
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+      }
+      .team-color-1 { color: #4ecca3; }
+      .team-color-2 { color: #f0c040; }
+      .score-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 2px;
+        width: 100%;
+        height: calc(100% - 22px);
+      }
+      .score-btn {
+        font-size: clamp(1.2rem, 5vw, 2rem);
+        font-weight: 700;
+        background: #16213e;
+        color: #888;
+        border: 2px solid #0f3460;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .score-btn.selected {
+        background: #4ecca3;
+        color: #000;
+        border-color: #4ecca3;
+      }
+      .score-btn.other-btn {
+        background: #16213e;
+        color: #888;
+        border-color: #0f3460;
+      }
+      .score-btn.other-btn.selected {
+        background: #4ecca3;
+        color: #000;
+        border-color: #4ecca3;
+      }
+      .score-btn:active { transform: scale(0.95); }
+
+      /* Other scores overlay */
+      .other-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.95);
+        z-index: 50;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 1rem;
+      }
+      .other-overlay.visible { display: flex; }
+      .other-overlay-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e94560;
+        margin-bottom: 8px;
+      }
+      .other-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+        max-width: 320px;
+      }
+      .other-grid-btn {
+        padding: 1.2rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: #16213e;
+        color: #888;
+        border: 2px solid #0f3460;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+        user-select: none;
+      }
+      .other-grid-btn.selected {
+        background: #4ecca3;
+        color: #000;
+        border-color: #4ecca3;
+      }
+      .other-grid-btn.pickup {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+      }
+      .other-grid-btn.pickup.selected {
+        background: #e74c3c;
+        color: #fff;
+        border-color: #fff;
+      }
+      .other-cancel {
+        margin-top: 12px;
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+        font-weight: 700;
+        background: #e94560;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      /* Scorecard overlay */
+      #scorecard-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #1a1a2e;
+        z-index: 100;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 1rem;
+      }
+      #scorecard-overlay.visible { display: flex; }
+      #scorecard-overlay h2 {
+        text-align: center;
+        color: #e94560;
+        margin-bottom: 0.5rem;
+      }
+      .scorecard-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .scorecard-table th, .scorecard-table td {
+        border: 1px solid #333;
+        padding: 0.25rem 0.3rem;
+        text-align: center;
+      }
+      .scorecard-table th { background: #0f3460; color: #eee; }
+      .scorecard-table td { background: #16213e; }
+      .scorecard-table .won-hole { background: #1b4332; color: #4ecca3; font-weight: 700; }
+      .scorecard-table .lost-hole { background: #3d0000; color: #e94560; }
+      .scorecard-table .halved-hole { background: #333; }
+      .final-result {
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        padding: 0.6rem;
+        margin-top: 0.5rem;
+        border-radius: 6px;
+      }
+      .final-result.won-hole { background: #1b6b3a; color: #fff; }
+      .final-result.lost-hole { background: #b71c1c; color: #fff; }
+      .final-result.halved-hole { background: #333; color: #ccc; }
+      #close-scorecard {
+        align-self: center;
+        padding: 0.6rem 2rem;
+        font-size: 1rem;
+        background: #e94560;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 0.5rem;
+      }
+
+
+      .back-home-bar {
+        padding: 0.4rem;
+        flex-shrink: 0;
+      }
+      .back-home-link {
+        display: block;
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ccc;
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      /* Landscape or wider screens: give more room */
+      @media (min-width: 500px) {
+        .score-btn { font-size: 2rem; }
+        .player-name { font-size: 0.9rem; }
+        .player-row { padding: 3px 6px; }
+        .score-buttons { gap: 3px; }
+      }
+
+      /* Very short screens (landscape phone): compress chrome */
+      @media (max-height: 500px) {
+        .header { padding: 1px 4px; }
+        .match-status { font-size: 0.7rem; }
+        .hole-nav { padding: 1px 3px; }
+        .hole-nav button { height: 32px; width: 48px; font-size: 1.1rem; }
+        .hole-label { font-size: 1rem; }
+        .hole-dots { padding: 1px 3px; gap: 2px; }
+        .hole-dot { width: 10px; height: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen">
+      <h1>Four-Ball Match Scorer</h1>
+      <div class="team-block">
+        <h2>Team 1</h2>
+        <input type="text" id="p1-name" placeholder="Player 1" />
+        <input type="text" id="p2-name" placeholder="Player 2" />
+      </div>
+      <div class="team-block">
+        <h2>Team 2</h2>
+        <input type="text" id="p3-name" placeholder="Player 3" />
+        <input type="text" id="p4-name" placeholder="Player 4" />
+      </div>
+      <button id="start-btn">Start Match</button>
+    </div>
+
+    <!-- SCORER SCREEN -->
+    <div id="scorer-screen">
+      <div class="header">
+        <div class="match-status">
+          <span class="match-badge badge-individual" id="individual-status-1">P1vP3: AS</span>
+          <span class="match-badge badge-individual" id="individual-status-2">P2vP4: AS</span>
+          <span class="match-badge badge-fourball" id="fourball-status">Four-Ball: AS</span>
+        </div>
+      </div>
+
+      <div class="hole-nav">
+        <button id="prev-hole">&larr;</button>
+        <span class="hole-label" id="hole-label">Hole 1</span>
+        <button id="next-hole">&rarr;</button>
+      </div>
+
+      <div class="hole-dots" id="hole-dots"></div>
+
+      <div class="players-area" id="players-area"></div>
+
+      <div class="back-home-bar">
+        <span id="btn-home" class="back-home-link">Back to Home</span>
+      </div>
+    </div>
+
+    <!-- OTHER SCORES OVERLAY -->
+    <div class="other-overlay" id="other-overlay">
+      <div class="other-overlay-title" id="other-title">Other Score</div>
+      <div class="other-grid" id="other-grid"></div>
+      <button class="other-cancel" id="other-cancel">Cancel</button>
+    </div>
+
+    <!-- SCORECARD OVERLAY -->
+    <div id="scorecard-overlay">
+      <h2>Full Scorecard</h2>
+      <div id="scorecard-content"></div>
+      <button id="close-scorecard">Close</button>
+    </div>
+
+    <script>
+      // ── State ──
+      const HOLES = 18;
+      const QUICK_SCORES = [3, 4, 5, 6, 7];
+      const OTHER_SCORES = [1, 2, 8, 9, 10];
+      const PICKUP = 99; // special value for "picked up"
+      let players = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+      // scores[playerIndex][holeIndex] = score, 99=pickup, 0=not set
+      let scores: number[][] = [[], [], [], []];
+      let currentHole = 0;
+
+      function initScores() {
+        scores = Array.from({ length: 4 }, () => Array(HOLES).fill(0));
+      }
+
+      // ── Match Play Logic ──
+      // Individual match between two players by index
+      function calcIndividualMatch(upToHole: number, pA: number, pB: number) {
+        let status = 0; // positive = pA up, negative = pB up
+        let holesPlayed = 0;
+        for (let h = 0; h <= upToHole && h < HOLES; h++) {
+          const sA = scores[pA][h];
+          const sB = scores[pB][h];
+          if (sA > 0 && sB > 0) {
+            holesPlayed++;
+            if (sA < sB) status++;
+            else if (sB < sA) status--;
+          }
+        }
+        return { status, holesPlayed };
+      }
+
+      // Four-ball: best ball of Team1 (P1,P2) vs best ball of Team2 (P3,P4)
+      function calcFourBallMatch(upToHole: number) {
+        let status = 0; // positive = Team1 up
+        let holesPlayed = 0;
+        for (let h = 0; h <= upToHole && h < HOLES; h++) {
+          const s1 = scores[0][h];
+          const s2 = scores[1][h];
+          const s3 = scores[2][h];
+          const s4 = scores[3][h];
+          // Need at least one score from each team
+          const t1scores = [s1, s2].filter(s => s > 0);
+          const t2scores = [s3, s4].filter(s => s > 0);
+          if (t1scores.length > 0 && t2scores.length > 0) {
+            holesPlayed++;
+            const best1 = Math.min(...t1scores);
+            const best2 = Math.min(...t2scores);
+            if (best1 < best2) status++;
+            else if (best2 < best1) status--;
+          }
+        }
+        return { status, holesPlayed };
+      }
+
+      // status positive = player1/team1 up, negative = down
+      function formatMatchStatus(status: number, holesPlayed: number): string {
+        const holesRemaining = HOLES - holesPlayed;
+        if (holesPlayed === 0 || status === 0) return 'AS';
+
+        const up = Math.abs(status);
+        const direction = status > 0 ? 'up' : 'down';
+
+        if (holesRemaining === 0) {
+          return status > 0 ? `Won ${up}up` : `Lost ${up}up`;
+        }
+
+        if (up > holesRemaining) {
+          return status > 0 ? `Won ${up}&${holesRemaining}` : `Lost ${up}&${holesRemaining}`;
+        }
+
+        if (up === holesRemaining) {
+          return `${up} ${direction} (dormie)`;
+        }
+
+        return `${up} ${direction}`;
+      }
+
+      // ── Rendering ──
+      function renderHoleDots() {
+        const container = document.getElementById('hole-dots')!;
+        container.innerHTML = '';
+        for (let h = 0; h < HOLES; h++) {
+          const dot = document.createElement('div');
+          dot.className = 'hole-dot';
+          if (h === currentHole) dot.classList.add('active');
+          // filled if all 4 players have scores
+          const allFilled = scores.every(p => p[h] > 0);
+          if (allFilled) dot.classList.add('filled');
+          dot.addEventListener('click', () => { currentHole = h; render(); });
+          container.appendChild(dot);
+        }
+      }
+
+      function renderPlayers() {
+        const area = document.getElementById('players-area')!;
+        area.innerHTML = '';
+        for (let p = 0; p < 4; p++) {
+          const row = document.createElement('div');
+          row.className = 'player-row';
+
+          const teamClass = p < 2 ? 'team-color-1' : 'team-color-2';
+
+          row.innerHTML = `
+            <div class="player-name ${teamClass}">${players[p]}</div>
+            <div class="score-buttons" data-player="${p}"></div>
+          `;
+
+          const btnsContainer = row.querySelector('.score-buttons')!;
+          const currentScore = scores[p][currentHole];
+
+          function makeScoreBtn(s: number) {
+            const btn = document.createElement('div');
+            btn.className = 'score-btn';
+            btn.setAttribute('role', 'button');
+            btn.textContent = String(s);
+            if (currentScore === s) btn.classList.add('selected');
+            btn.addEventListener('click', () => {
+              scores[p][currentHole] = currentScore === s ? 0 : s;
+              saveState();
+              render();
+            });
+            return btn;
+          }
+
+          // Grid order: row1=[3, 4, 5], row2=[6, 7, Other]
+          btnsContainer.appendChild(makeScoreBtn(3));
+          btnsContainer.appendChild(makeScoreBtn(4));
+          btnsContainer.appendChild(makeScoreBtn(5));
+
+          btnsContainer.appendChild(makeScoreBtn(6));
+          btnsContainer.appendChild(makeScoreBtn(7));
+
+          // "Other" button
+          const otherBtn = document.createElement('div');
+          otherBtn.className = 'score-btn other-btn';
+          otherBtn.setAttribute('role', 'button');
+          const isOtherSelected = currentScore > 0 && !QUICK_SCORES.includes(currentScore);
+          if (isOtherSelected) {
+            otherBtn.classList.add('selected');
+            otherBtn.textContent = currentScore === PICKUP ? 'P/U' : String(currentScore);
+          } else {
+            otherBtn.textContent = 'Other';
+          }
+          otherBtn.addEventListener('click', () => openOtherOverlay(p));
+          btnsContainer.appendChild(otherBtn);
+          area.appendChild(row);
+        }
+      }
+
+      // ── Other Score Overlay ──
+      function openOtherOverlay(playerIdx: number) {
+        const overlay = document.getElementById('other-overlay')!;
+        const grid = document.getElementById('other-grid')!;
+        const title = document.getElementById('other-title')!;
+        title.textContent = `${players[playerIdx]} — Hole ${currentHole + 1}`;
+
+        grid.innerHTML = '';
+        const currentScore = scores[playerIdx][currentHole];
+        const options = [...OTHER_SCORES, PICKUP];
+
+        for (const val of options) {
+          const btn = document.createElement('div');
+          btn.className = 'other-grid-btn';
+          if (val === PICKUP) {
+            btn.textContent = 'Pickup';
+            btn.classList.add('pickup');
+          } else {
+            btn.textContent = String(val);
+          }
+          if (currentScore === val) btn.classList.add('selected');
+          btn.addEventListener('click', () => {
+            scores[playerIdx][currentHole] = currentScore === val ? 0 : val;
+            saveState();
+            overlay.classList.remove('visible');
+            render();
+          });
+          grid.appendChild(btn);
+        }
+
+        // Clear button
+        const clearBtn = document.createElement('div');
+        clearBtn.className = 'other-grid-btn';
+        clearBtn.textContent = 'Clear';
+        clearBtn.addEventListener('click', () => {
+          scores[playerIdx][currentHole] = 0;
+          saveState();
+          overlay.classList.remove('visible');
+          render();
+        });
+        grid.appendChild(clearBtn);
+
+        overlay.classList.add('visible');
+      }
+
+      document.getElementById('other-cancel')!.addEventListener('click', () => {
+        document.getElementById('other-overlay')!.classList.remove('visible');
+      });
+
+      function renderMatchStatus() {
+        const lastCompleted = findLastCompletedHole();
+
+        // Individual: P1 vs P3, P2 vs P4
+        const ind1 = calcIndividualMatch(lastCompleted, 0, 2);
+        const ind2 = calcIndividualMatch(lastCompleted, 1, 3);
+        const fb = calcFourBallMatch(lastCompleted);
+
+        const ind1Text = formatMatchStatus(ind1.status, ind1.holesPlayed);
+        const ind2Text = formatMatchStatus(ind2.status, ind2.holesPlayed);
+        const fbText = formatMatchStatus(fb.status, fb.holesPlayed);
+
+        function applyBadgeColor(el: HTMLElement, status: number) {
+          el.classList.remove('badge-up', 'badge-down');
+          if (status > 0) el.classList.add('badge-up');
+          else if (status < 0) el.classList.add('badge-down');
+        }
+
+        const el1 = document.getElementById('individual-status-1')!;
+        const el2 = document.getElementById('individual-status-2')!;
+        const elFb = document.getElementById('fourball-status')!;
+
+        el1.textContent = `${players[0]}: ${ind1Text}`;
+        el2.textContent = `${players[1]}: ${ind2Text}`;
+        elFb.textContent = `4Ball: ${fbText}`;
+
+        applyBadgeColor(el1, ind1.status);
+        applyBadgeColor(el2, ind2.status);
+        applyBadgeColor(elFb, fb.status);
+      }
+
+      function findLastCompletedHole(): number {
+        // Find the highest hole index where at least some scoring exists
+        for (let h = HOLES - 1; h >= 0; h--) {
+          if (scores.some(p => p[h] > 0)) return h;
+        }
+        return -1;
+      }
+
+      function render() {
+        document.getElementById('hole-label')!.textContent = `Hole ${currentHole + 1}`;
+        (document.getElementById('prev-hole') as HTMLButtonElement).disabled = currentHole === 0;
+        (document.getElementById('next-hole') as HTMLButtonElement).disabled = currentHole === HOLES - 1;
+        renderHoleDots();
+        renderPlayers();
+        renderMatchStatus();
+      }
+
+      // ── Scorecard Overlay ──
+      function renderScorecard(mode: 'ind1' | 'ind2' | 'fourball' = 'fourball') {
+        const content = document.getElementById('scorecard-content')!;
+        let html = '';
+
+        if (mode === 'ind1') {
+          html += `<h3 style="color:#4ecca3;margin:0.5rem 0 0.3rem">${players[0]} vs ${players[2]}</h3>`;
+          html += buildScorecardTable([0, 2], 'individual', 0, 2);
+        }
+
+        if (mode === 'ind2') {
+          html += `<h3 style="color:#4ecca3;margin:0.5rem 0 0.3rem">${players[1]} vs ${players[3]}</h3>`;
+          html += buildScorecardTable([1, 3], 'individual', 1, 3);
+        }
+
+        if (mode === 'fourball') {
+          html += `<h3 style="color:#f0c040;margin:0.5rem 0 0.3rem">Four-Ball: Team 1 vs Team 2</h3>`;
+          html += buildScorecardTable([0, 1, 2, 3], 'fourball', 0, 0);
+        }
+
+        content.innerHTML = html;
+      }
+
+      function buildScorecardTable(playerIndices: number[], mode: 'individual' | 'fourball', pA: number, pB: number): string {
+        let html = '<table class="scorecard-table"><thead><tr><th>Hole</th>';
+        for (const pi of playerIndices) {
+          html += `<th>${players[pi]}</th>`;
+        }
+        html += '<th>Result</th><th>Tally</th></tr></thead><tbody>';
+
+        for (let h = 0; h < HOLES; h++) {
+          html += `<tr><td>${h + 1}</td>`;
+          for (const pi of playerIndices) {
+            const s = scores[pi][h];
+            html += `<td>${s === PICKUP ? 'P/U' : s > 0 ? s : '-'}</td>`;
+          }
+
+          let resultText = '-';
+          let resultClass = '';
+          let tallyText = '-';
+          let tallyClass = '';
+          if (mode === 'individual') {
+            const sA = scores[pA][h], sB = scores[pB][h];
+            if (sA > 0 && sB > 0) {
+              if (sA < sB) { resultText = players[pA]; resultClass = 'won-hole'; }
+              else if (sB < sA) { resultText = players[pB]; resultClass = 'lost-hole'; }
+              else { resultText = 'Halved'; resultClass = 'halved-hole'; }
+              const { status, holesPlayed } = calcIndividualMatch(h, pA, pB);
+              tallyText = formatMatchStatus(status, holesPlayed);
+              tallyClass = status > 0 ? 'won-hole' : status < 0 ? 'lost-hole' : '';
+            }
+          } else {
+            const t1 = [scores[0][h], scores[1][h]].filter(s => s > 0);
+            const t2 = [scores[2][h], scores[3][h]].filter(s => s > 0);
+            if (t1.length > 0 && t2.length > 0) {
+              const best1 = Math.min(...t1), best2 = Math.min(...t2);
+              if (best1 < best2) { resultText = 'T1'; resultClass = 'won-hole'; }
+              else if (best2 < best1) { resultText = 'T2'; resultClass = 'lost-hole'; }
+              else { resultText = 'Halved'; resultClass = 'halved-hole'; }
+              const { status, holesPlayed } = calcFourBallMatch(h);
+              tallyText = formatMatchStatus(status, holesPlayed);
+              tallyClass = status > 0 ? 'won-hole' : status < 0 ? 'lost-hole' : '';
+            }
+          }
+          html += `<td class="${resultClass}">${resultText}</td><td class="${tallyClass}">${tallyText}</td></tr>`;
+        }
+
+        html += '</tbody></table>';
+
+        // Final result summary
+        let finalStatus = 0, finalHolesPlayed = 0;
+        if (mode === 'individual') {
+          ({ status: finalStatus, holesPlayed: finalHolesPlayed } = calcIndividualMatch(HOLES - 1, pA, pB));
+        } else {
+          ({ status: finalStatus, holesPlayed: finalHolesPlayed } = calcFourBallMatch(HOLES - 1));
+        }
+        if (finalHolesPlayed > 0) {
+          const finalClass = finalStatus > 0 ? 'won-hole' : finalStatus < 0 ? 'lost-hole' : 'halved-hole';
+          html += `<div class="final-result ${finalClass}">${formatMatchStatus(finalStatus, finalHolesPlayed)}</div>`;
+        }
+
+        return html;
+      }
+
+      // ── Persistence ──
+      function saveState() {
+        localStorage.setItem('fourball_scores', JSON.stringify(scores));
+        localStorage.setItem('fourball_players', JSON.stringify(players));
+        localStorage.setItem('fourball_hole', String(currentHole));
+      }
+
+      function loadState(): boolean {
+        const s = localStorage.getItem('fourball_scores');
+        const p = localStorage.getItem('fourball_players');
+        const h = localStorage.getItem('fourball_hole');
+        if (s && p) {
+          scores = JSON.parse(s);
+          players = JSON.parse(p);
+          currentHole = h ? parseInt(h, 10) : 0;
+          return true;
+        }
+        return false;
+      }
+
+      // ── Init ──
+      function startMatch() {
+        players[0] = (document.getElementById('p1-name') as HTMLInputElement).value || 'Player 1';
+        players[1] = (document.getElementById('p2-name') as HTMLInputElement).value || 'Player 2';
+        players[2] = (document.getElementById('p3-name') as HTMLInputElement).value || 'Player 3';
+        players[3] = (document.getElementById('p4-name') as HTMLInputElement).value || 'Player 4';
+        initScores();
+        currentHole = 0;
+        saveState();
+        showScorer();
+      }
+
+      function showScorer() {
+        document.getElementById('setup-screen')!.style.display = 'none';
+        const scorer = document.getElementById('scorer-screen')!;
+        scorer.style.display = 'flex';
+        render();
+      }
+
+      // Event listeners
+      document.getElementById('start-btn')!.addEventListener('click', startMatch);
+
+      document.getElementById('prev-hole')!.addEventListener('click', () => {
+        if (currentHole > 0) { currentHole--; saveState(); render(); }
+      });
+      document.getElementById('next-hole')!.addEventListener('click', () => {
+        if (currentHole < HOLES - 1) { currentHole++; saveState(); render(); }
+      });
+
+      // Tap individual badges → open that player's scorecard
+      document.getElementById('individual-status-1')!.addEventListener('click', () => {
+        renderScorecard('ind1');
+        document.getElementById('scorecard-overlay')!.classList.add('visible');
+      });
+      document.getElementById('individual-status-2')!.addEventListener('click', () => {
+        renderScorecard('ind2');
+        document.getElementById('scorecard-overlay')!.classList.add('visible');
+      });
+
+      // Tap four-ball badge → open four-ball scorecard
+      document.getElementById('fourball-status')!.addEventListener('click', () => {
+        renderScorecard('fourball');
+        document.getElementById('scorecard-overlay')!.classList.add('visible');
+      });
+
+      document.getElementById('close-scorecard')!.addEventListener('click', () => {
+        document.getElementById('scorecard-overlay')!.classList.remove('visible');
+      });
+
+      document.getElementById('btn-home')!.addEventListener('click', () => {
+        if (confirm('Go back to home? Your scores are saved.')) {
+          document.getElementById('scorer-screen')!.style.display = 'none';
+          document.getElementById('setup-screen')!.style.display = 'flex';
+        }
+      });
+
+      // Resume existing match if data exists
+      if (loadState()) {
+        showScorer();
+      }
+
+      // Register service worker (network-first strategy)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          // Check for updates immediately, then every 60s
+          reg.update();
+          setInterval(() => reg.update(), 60000);
+
+          // When a new SW is installed, activate it immediately
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'activated') {
+                  // New version active — reload to pick up changes
+                  window.location.reload();
+                }
+              });
+            }
+          });
+        });
+
+        // If a new SW takes control, reload the page
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+    </script>
+  </body>
+</html>

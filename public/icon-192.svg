@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="24" fill="#16213e"/>
+  <circle cx="96" cy="80" r="30" fill="white" stroke="#0f3460" stroke-width="2"/>
+  <circle cx="88" cy="72" r="2" fill="#0f3460"/>
+  <circle cx="104" cy="72" r="2" fill="#0f3460"/>
+  <circle cx="96" cy="80" r="2" fill="#0f3460"/>
+  <circle cx="92" cy="76" r="2" fill="#0f3460"/>
+  <circle cx="100" cy="76" r="2" fill="#0f3460"/>
+  <circle cx="96" cy="88" r="2" fill="#0f3460"/>
+  <text x="96" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="32" fill="#e94560">4BALL</text>
+</svg>
