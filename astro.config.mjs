@@ -3,6 +3,5 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://MarkJamesHoward.github.io',
-  base: '/interclub',
+  site: 'https://interclubmatch.com',
 });

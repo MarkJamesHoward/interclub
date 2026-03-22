@@ -10,8 +10,8 @@
     <meta name="theme-color" content="#16213e" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="/interclub/manifest.json" />
-    <link rel="apple-touch-icon" href="/interclub/icon-192.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
     <title>Four-Ball Match Scorer</title>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1045,7 +1045,7 @@
 
       // Register service worker (network-first strategy)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/interclub/sw.js').then((reg) => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
           // Check for updates immediately, then every 60s
           reg.update();
           setInterval(() => reg.update(), 60000);
