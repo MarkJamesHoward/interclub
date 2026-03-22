@@ -10,8 +10,8 @@
     <meta name="theme-color" content="#16213e" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <link rel="manifest" href="/interclub/manifest.json" />
+    <link rel="apple-touch-icon" href="/interclub/icon-192.svg" />
     <title>Four-Ball Match Scorer</title>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,14 +35,19 @@
       }
       #setup-screen h1 { font-size: 1.6rem; color: #e94560; }
       .team-block { width: 100%; max-width: 400px; }
-      .team-block h2 {
+      .team-name-input {
         font-size: 1rem;
-        margin-bottom: 0.5rem;
+        font-weight: bold;
         color: #0f3460;
         background: #e94560;
         padding: 0.3rem 0.8rem;
         border-radius: 6px;
-        display: inline-block;
+        border: none;
+        text-align: center;
+      }
+      .team-name-input::placeholder {
+        color: #0f3460;
+        opacity: 0.7;
       }
       .team-block input {
         width: 100%;
@@ -54,7 +59,7 @@
         color: #eee;
         font-size: 1.1rem;
       }
-      #start-btn {
+      #start-btn, #history-btn {
         padding: 1rem 3rem;
         font-size: 1.3rem;
         font-weight: 700;
@@ -63,6 +68,73 @@
         border: none;
         border-radius: 12px;
         cursor: pointer;
+      }
+      #history-btn {
+        background: #0f3460;
+        font-size: 1rem;
+        padding: 0.7rem 2rem;
+      }
+
+      /* ── History Screen ── */
+      #history-screen {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        height: 100dvh;
+        padding: 1rem;
+        gap: 1rem;
+        overflow-y: auto;
+      }
+      #history-screen h1 { font-size: 1.6rem; color: #e94560; }
+      #history-list {
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      .history-card {
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 10px;
+        padding: 0.8rem 1rem;
+        cursor: pointer;
+      }
+      .history-card:active { opacity: 0.7; }
+      .history-date {
+        font-size: 0.8rem;
+        color: #888;
+        margin-bottom: 0.3rem;
+      }
+      .history-teams {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e94560;
+        margin-bottom: 0.4rem;
+      }
+      .history-results {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-size: 0.85rem;
+      }
+      .history-results span { color: #ccc; }
+      #history-back {
+        padding: 0.7rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        background: #e94560;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 0.5rem;
+      }
+      .history-empty {
+        text-align: center;
+        color: #888;
+        font-size: 1rem;
+        padding: 2rem;
       }
 
       /* ── Scorer Screen ── */
@@ -82,9 +154,13 @@
         display: flex;
         gap: 0.5rem;
         font-size: 0.95rem;
-        flex-wrap: wrap;
         width: 100%;
-        justify-content: center;
+      }
+      .match-individuals {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
       }
       .match-badge {
         padding: 0.8rem 1.4rem;
@@ -94,10 +170,11 @@
         cursor: pointer;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
+        text-align: center;
       }
       .match-badge:active { opacity: 0.7; }
-      .badge-individual { background: #533483; }
-      .badge-fourball { background: #0f3460; }
+      .badge-individual { background: #533483; flex: 1; }
+      .badge-fourball { background: #0f3460; width: 20%; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
       .match-badge.badge-up { background: #1b6b3a; }
       .match-badge.badge-down { background: #b71c1c; }
 
@@ -374,24 +451,34 @@
     <div id="setup-screen">
       <h1>Four-Ball Match Scorer</h1>
       <div class="team-block">
-        <h2>Team 1</h2>
+        <input type="text" id="team1-name" placeholder="Miramar" class="team-name-input" />
         <input type="text" id="p1-name" placeholder="Player 1" />
         <input type="text" id="p2-name" placeholder="Player 2" />
       </div>
       <div class="team-block">
-        <h2>Team 2</h2>
+        <input type="text" id="team2-name" placeholder="Opponents" class="team-name-input" />
         <input type="text" id="p3-name" placeholder="Player 3" />
         <input type="text" id="p4-name" placeholder="Player 4" />
       </div>
       <button id="start-btn">Start Match</button>
+      <button id="history-btn">Previous Matches</button>
+    </div>
+
+    <!-- HISTORY SCREEN -->
+    <div id="history-screen">
+      <h1>Previous Matches</h1>
+      <div id="history-list"></div>
+      <button id="history-back">Back</button>
     </div>
 
     <!-- SCORER SCREEN -->
     <div id="scorer-screen">
       <div class="header">
         <div class="match-status">
-          <span class="match-badge badge-individual" id="individual-status-1">P1vP3: AS</span>
-          <span class="match-badge badge-individual" id="individual-status-2">P2vP4: AS</span>
+          <div class="match-individuals">
+            <span class="match-badge badge-individual" id="individual-status-1">P1vP3: AS</span>
+            <span class="match-badge badge-individual" id="individual-status-2">P2vP4: AS</span>
+          </div>
           <span class="match-badge badge-fourball" id="fourball-status">Four-Ball: AS</span>
         </div>
       </div>
@@ -431,6 +518,7 @@
       const QUICK_SCORES = [3, 4, 5, 6, 7];
       const OTHER_SCORES = [1, 2, 8, 9, 10];
       const PICKUP = 99; // special value for "picked up"
+      let teamNames = ['Miramar', 'Opponents'];
       let players = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
       // scores[playerIndex][holeIndex] = score, 99=pickup, 0=not set
       let scores: number[][] = [[], [], [], []];
@@ -646,9 +734,9 @@
         const el2 = document.getElementById('individual-status-2')!;
         const elFb = document.getElementById('fourball-status')!;
 
-        el1.textContent = `${players[0]}: ${ind1Text}`;
-        el2.textContent = `${players[1]}: ${ind2Text}`;
-        elFb.textContent = `4Ball: ${fbText}`;
+        el1.textContent = `${players[0]} vs ${players[2]}: ${ind1Text}`;
+        el2.textContent = `${players[1]} vs ${players[3]}: ${ind2Text}`;
+        elFb.innerHTML = `4Ball<br>${fbText}`;
 
         applyBadgeColor(el1, ind1.status);
         applyBadgeColor(el2, ind2.status);
@@ -688,7 +776,7 @@
         }
 
         if (mode === 'fourball') {
-          html += `<h3 style="color:#f0c040;margin:0.5rem 0 0.3rem">Four-Ball: Team 1 vs Team 2</h3>`;
+          html += `<h3 style="color:#f0c040;margin:0.5rem 0 0.3rem">Four-Ball: ${teamNames[0]} vs ${teamNames[1]}</h3>`;
           html += buildScorecardTable([0, 1, 2, 3], 'fourball', 0, 0);
         }
 
@@ -760,16 +848,20 @@
       function saveState() {
         localStorage.setItem('fourball_scores', JSON.stringify(scores));
         localStorage.setItem('fourball_players', JSON.stringify(players));
+        localStorage.setItem('fourball_teams', JSON.stringify(teamNames));
         localStorage.setItem('fourball_hole', String(currentHole));
+        checkAndSaveIfComplete();
       }
 
       function loadState(): boolean {
         const s = localStorage.getItem('fourball_scores');
         const p = localStorage.getItem('fourball_players');
+        const t = localStorage.getItem('fourball_teams');
         const h = localStorage.getItem('fourball_hole');
         if (s && p) {
           scores = JSON.parse(s);
           players = JSON.parse(p);
+          if (t) teamNames = JSON.parse(t);
           currentHole = h ? parseInt(h, 10) : 0;
           return true;
         }
@@ -778,12 +870,17 @@
 
       // ── Init ──
       function startMatch() {
+        const t1Input = document.getElementById('team1-name') as HTMLInputElement;
+        const t2Input = document.getElementById('team2-name') as HTMLInputElement;
+        teamNames[0] = t1Input.value || t1Input.placeholder;
+        teamNames[1] = t2Input.value || t2Input.placeholder;
         players[0] = (document.getElementById('p1-name') as HTMLInputElement).value || 'Player 1';
         players[1] = (document.getElementById('p2-name') as HTMLInputElement).value || 'Player 2';
         players[2] = (document.getElementById('p3-name') as HTMLInputElement).value || 'Player 3';
         players[3] = (document.getElementById('p4-name') as HTMLInputElement).value || 'Player 4';
         initScores();
         currentHole = 0;
+        matchSaved = false;
         saveState();
         showScorer();
       }
@@ -795,8 +892,117 @@
         render();
       }
 
+      // ── Match History ──
+      interface MatchRecord {
+        date: string;
+        teamNames: string[];
+        players: string[];
+        scores: number[][];
+        results: { ind1: string; ind2: string; fourball: string };
+      }
+
+      function checkMatchComplete(): boolean {
+        return scores.every(p => p.every(s => s > 0));
+      }
+
+      function saveMatchToHistory() {
+        const history: MatchRecord[] = JSON.parse(localStorage.getItem('fourball_history') || '[]');
+        const ind1 = calcIndividualMatch(HOLES - 1, 0, 2);
+        const ind2 = calcIndividualMatch(HOLES - 1, 1, 3);
+        const fb = calcFourBallMatch(HOLES - 1);
+        const record: MatchRecord = {
+          date: new Date().toISOString(),
+          teamNames: [...teamNames],
+          players: [...players],
+          scores: scores.map(p => [...p]),
+          results: {
+            ind1: `${players[0]} vs ${players[2]}: ${formatMatchStatus(ind1.status, ind1.holesPlayed)}`,
+            ind2: `${players[1]} vs ${players[3]}: ${formatMatchStatus(ind2.status, ind2.holesPlayed)}`,
+            fourball: `4Ball: ${formatMatchStatus(fb.status, fb.holesPlayed)}`
+          }
+        };
+        history.unshift(record);
+        localStorage.setItem('fourball_history', JSON.stringify(history));
+      }
+
+      let matchSaved = false;
+
+      function checkAndSaveIfComplete() {
+        if (!matchSaved && checkMatchComplete()) {
+          matchSaved = true;
+          saveMatchToHistory();
+        }
+      }
+
+      function renderHistory() {
+        const list = document.getElementById('history-list')!;
+        const history: MatchRecord[] = JSON.parse(localStorage.getItem('fourball_history') || '[]');
+        if (history.length === 0) {
+          list.innerHTML = '<div class="history-empty">No previous matches yet.</div>';
+          return;
+        }
+        list.innerHTML = history.map((m, i) => {
+          const d = new Date(m.date);
+          const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+          return `<div class="history-card" data-index="${i}">
+            <div class="history-date">${dateStr}</div>
+            <div class="history-teams">${m.teamNames[0]} vs ${m.teamNames[1]}</div>
+            <div class="history-results">
+              <span>${m.results.ind1}</span>
+              <span>${m.results.ind2}</span>
+              <span>${m.results.fourball}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+        list.querySelectorAll('.history-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const idx = parseInt((card as HTMLElement).dataset.index!);
+            viewHistoryMatch(history[idx]);
+          });
+        });
+      }
+
+      function viewHistoryMatch(record: MatchRecord) {
+        // Temporarily swap globals to reuse scorecard rendering
+        const savedScores = scores;
+        const savedPlayers = players;
+        const savedTeamNames = teamNames;
+        scores = record.scores;
+        players = record.players;
+        teamNames = record.teamNames;
+
+        const content = document.getElementById('scorecard-content')!;
+        let html = '';
+        html += `<h3 style="color:#4ecca3;margin:0.5rem 0 0.3rem">${players[0]} vs ${players[2]}</h3>`;
+        html += buildScorecardTable([0, 2], 'individual', 0, 2);
+        html += `<h3 style="color:#4ecca3;margin:0.5rem 0 0.3rem">${players[1]} vs ${players[3]}</h3>`;
+        html += buildScorecardTable([1, 3], 'individual', 1, 3);
+        html += `<h3 style="color:#f0c040;margin:0.5rem 0 0.3rem">Four-Ball: ${teamNames[0]} vs ${teamNames[1]}</h3>`;
+        html += buildScorecardTable([0, 1, 2, 3], 'fourball', 0, 0);
+        content.innerHTML = html;
+
+        // Restore globals
+        scores = savedScores;
+        players = savedPlayers;
+        teamNames = savedTeamNames;
+
+        document.getElementById('scorecard-overlay')!.classList.add('visible');
+      }
+
       // Event listeners
       document.getElementById('start-btn')!.addEventListener('click', startMatch);
+
+      document.getElementById('history-btn')!.addEventListener('click', () => {
+        renderHistory();
+        document.getElementById('setup-screen')!.style.display = 'none';
+        document.getElementById('history-screen')!.style.display = 'flex';
+      });
+
+      document.getElementById('history-back')!.addEventListener('click', () => {
+        document.getElementById('history-screen')!.style.display = 'none';
+        document.getElementById('setup-screen')!.style.display = 'flex';
+      });
 
       document.getElementById('prev-hole')!.addEventListener('click', () => {
         if (currentHole > 0) { currentHole--; saveState(); render(); }
@@ -839,7 +1045,7 @@
 
       // Register service worker (network-first strategy)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
+        navigator.serviceWorker.register('/interclub/sw.js').then((reg) => {
           // Check for updates immediately, then every 60s
           reg.update();
           setInterval(() => reg.update(), 60000);

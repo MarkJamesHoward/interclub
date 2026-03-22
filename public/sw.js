@@ -1,7 +1,7 @@
 const CACHE_NAME = 'fourball-v2';
 const ASSETS = [
-  '/',
-  '/manifest.json',
+  '/interclub/',
+  '/interclub/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
