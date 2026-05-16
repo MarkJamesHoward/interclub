@@ -363,7 +363,9 @@
         z-index: 100;
         flex-direction: column;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         padding: 1rem;
+        padding-bottom: 3rem;
       }
       #scorecard-overlay.visible { display: flex; }
       #scorecard-overlay h2 {
@@ -374,14 +376,15 @@
       .scorecard-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.75rem;
+        font-size: 1rem;
         margin-bottom: 1rem;
       }
       .scorecard-table th, .scorecard-table td {
         border: 1px solid #333;
-        padding: 0.25rem 0.3rem;
+        padding: 0.55rem 0.4rem;
         text-align: center;
       }
+      .scorecard-table th { font-size: 0.9rem; }
       .scorecard-table th { background: #0f3460; color: #eee; }
       .scorecard-table td { background: #16213e; }
       .scorecard-table .won-hole { background: #1b4332; color: #4ecca3; font-weight: 700; }
@@ -533,6 +536,8 @@
       }
 
       // ── Match Play Logic ──
+      // Once a match is clinched (lead > holes remaining), the result is locked
+      // and subsequent holes are ignored — a 5&4 stays 5&4 even if play continues.
       // Individual match between two players by index
       function calcIndividualMatch(upToHole: number, pA: number, pB: number) {
         let status = 0; // positive = pA up, negative = pB up
@@ -544,6 +549,7 @@
             holesPlayed++;
             if (sA < sB) status++;
             else if (sB < sA) status--;
+            if (Math.abs(status) > HOLES - holesPlayed) break;
           }
         }
         return { status, holesPlayed };
@@ -567,6 +573,7 @@
             const best2 = Math.min(...t2scores);
             if (best1 < best2) status++;
             else if (best2 < best1) status--;
+            if (Math.abs(status) > HOLES - holesPlayed) break;
           }
         }
         return { status, holesPlayed };
@@ -805,9 +812,14 @@
           let resultClass = '';
           let tallyText = '-';
           let tallyClass = '';
+          const prevTally = mode === 'individual'
+            ? calcIndividualMatch(h - 1, pA, pB)
+            : calcFourBallMatch(h - 1);
+          const alreadyClinched = prevTally.holesPlayed > 0
+            && Math.abs(prevTally.status) > HOLES - prevTally.holesPlayed;
           if (mode === 'individual') {
             const sA = scores[pA][h], sB = scores[pB][h];
-            if (sA > 0 && sB > 0) {
+            if (sA > 0 && sB > 0 && !alreadyClinched) {
               if (sA < sB) { resultText = players[pA]; resultClass = 'won-hole'; }
               else if (sB < sA) { resultText = players[pB]; resultClass = 'lost-hole'; }
               else { resultText = 'Halved'; resultClass = 'halved-hole'; }
@@ -818,7 +830,7 @@
           } else {
             const t1 = [scores[0][h], scores[1][h]].filter(s => s > 0);
             const t2 = [scores[2][h], scores[3][h]].filter(s => s > 0);
-            if (t1.length > 0 && t2.length > 0) {
+            if (t1.length > 0 && t2.length > 0 && !alreadyClinched) {
               const best1 = Math.min(...t1), best2 = Math.min(...t2);
               if (best1 < best2) { resultText = 'T1'; resultClass = 'won-hole'; }
               else if (best2 < best1) { resultText = 'T2'; resultClass = 'lost-hole'; }
@@ -906,8 +918,19 @@
         results: { ind1: string; ind2: string; fourball: string };
       }
 
+      function isMatchDecided(status: number, holesPlayed: number): boolean {
+        if (holesPlayed === 0) return false;
+        // Clinched (lead > holes remaining) or all 18 played
+        return Math.abs(status) > HOLES - holesPlayed || holesPlayed >= HOLES;
+      }
+
       function checkMatchComplete(): boolean {
-        return scores.every(p => p.every(s => s > 0));
+        const ind1 = calcIndividualMatch(HOLES - 1, 0, 2);
+        const ind2 = calcIndividualMatch(HOLES - 1, 1, 3);
+        const fb = calcFourBallMatch(HOLES - 1);
+        return isMatchDecided(ind1.status, ind1.holesPlayed)
+          && isMatchDecided(ind2.status, ind2.holesPlayed)
+          && isMatchDecided(fb.status, fb.holesPlayed);
       }
 
       function saveMatchToHistory() {
