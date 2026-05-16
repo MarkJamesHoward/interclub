@@ -99,13 +99,33 @@
         gap: 0.8rem;
       }
       .history-card {
+        position: relative;
         background: #16213e;
         border: 1px solid #0f3460;
         border-radius: 10px;
-        padding: 0.8rem 1rem;
+        padding: 0.8rem 2.5rem 0.8rem 1rem;
         cursor: pointer;
       }
       .history-card:active { opacity: 0.7; }
+      .history-delete {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.4rem;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: transparent;
+        color: #888;
+        border: none;
+        font-size: 1.3rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .history-delete:active { background: #b71c1c; color: #fff; }
       .history-date {
         font-size: 0.8rem;
         color: #888;
@@ -979,6 +999,7 @@
           const d = new Date(m.date);
           const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
           return `<div class="history-card" data-index="${i}">
+            <button class="history-delete" data-index="${i}" aria-label="Delete match">×</button>
             <div class="history-date">${dateStr}</div>
             <div class="history-teams">${m.teamNames[0]} vs ${m.teamNames[1]}</div>
             <div class="history-results">
@@ -990,9 +1011,23 @@
         }).join('');
 
         list.querySelectorAll('.history-card').forEach(card => {
-          card.addEventListener('click', () => {
+          card.addEventListener('click', (e) => {
+            if ((e.target as HTMLElement).classList.contains('history-delete')) return;
             const idx = parseInt((card as HTMLElement).dataset.index!);
             viewHistoryMatch(history[idx]);
+          });
+        });
+
+        list.querySelectorAll('.history-delete').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt((btn as HTMLElement).dataset.index!);
+            const match = history[idx];
+            if (confirm(`Delete match: ${match.teamNames[0]} vs ${match.teamNames[1]}?`)) {
+              history.splice(idx, 1);
+              localStorage.setItem('fourball_history', JSON.stringify(history));
+              renderHistory();
+            }
           });
         });
       }
