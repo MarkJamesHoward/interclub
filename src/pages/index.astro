@@ -71,6 +71,8 @@
       }
       #continue-btn {
         background: #1b6b3a;
+        font-size: 1rem;
+        padding: 0.7rem 2rem;
       }
       #history-btn {
         background: #0f3460;
@@ -959,6 +961,10 @@
         if (!matchSaved && checkMatchComplete()) {
           matchSaved = true;
           saveMatchToHistory();
+          localStorage.removeItem('fourball_scores');
+          localStorage.removeItem('fourball_players');
+          localStorage.removeItem('fourball_teams');
+          localStorage.removeItem('fourball_hole');
         }
       }
 
@@ -1060,7 +1066,7 @@
       });
 
       document.getElementById('btn-home')!.addEventListener('click', () => {
-        if (confirm('Go back to home? Your scores are saved.')) {
+        if (confirm('Go back to home? You can resume this match with Continue Match, but starting a new match will overwrite it.')) {
           document.getElementById('scorer-screen')!.style.display = 'none';
           populateSetupFromState();
           document.getElementById('setup-screen')!.style.display = 'flex';
@@ -1078,7 +1084,8 @@
         (document.getElementById('p2-name') as HTMLInputElement).value = players[1];
         (document.getElementById('p3-name') as HTMLInputElement).value = players[2];
         (document.getElementById('p4-name') as HTMLInputElement).value = players[3];
-        document.getElementById('continue-btn')!.style.display = '';
+        const hasAnyScore = scores.some(p => p.some(s => s > 0));
+        document.getElementById('continue-btn')!.style.display = hasAnyScore ? '' : 'none';
       }
 
       // Resume existing match if data exists
